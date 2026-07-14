@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#050c14" />
+  <title>RoboControl | HC-06</title>
+  <meta name="description" content="Control de robot Arduino Mega con Bluetooth HC-06 y sensor ultrasónico HC-SR04." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Animated BG -->
+  <div class="bg-grid"></div>
+
+  <!-- ══════════════════════════════════
+       HEADER
+  ══════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-icon">
+        <svg viewBox="0 0 36 36" fill="none">
+          <rect x="8" y="12" width="20" height="14" rx="3" stroke="currentColor" stroke-width="2"/>
+          <circle cx="13" cy="19" r="2.2" fill="currentColor"/>
+          <circle cx="23" cy="19" r="2.2" fill="currentColor"/>
+          <path d="M13 9 Q18 5.5 23 9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <rect x="6"  y="15" width="3" height="7" rx="1.5" fill="currentColor" opacity=".7"/>
+          <rect x="27" y="15" width="3" height="7" rx="1.5" fill="currentColor" opacity=".7"/>
+          <rect x="12" y="26" width="4" height="5" rx="1" fill="currentColor" opacity=".8"/>
+          <rect x="20" y="26" width="4" height="5" rx="1" fill="currentColor" opacity=".8"/>
+        </svg>
+      </div>
+      <span class="app-title">ROBOCONTROL</span>
+    </div>
+    <div class="header-status" id="headerStatus">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusLabel">Desconectado</span>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════
+       SCROLLABLE CONTENT
+  ══════════════════════════════════ -->
+  <main class="app-main">
+
+    <!-- ── SECCIÓN 1: Bluetooth ── -->
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+            <path d="M6 7L17 17M17 7L12 12L17 17M12 3V21M6 9L12 3L12 12L6 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        Bluetooth HC-06
+      </div>
+
+      <!-- Status badge -->
+      <div class="bt-badge" id="btBadge">
+        <div class="bt-ring" id="btRing"></div>
+        <div class="bt-inner">
+          <span class="bt-status-text" id="btStatusText">Desconectado</span>
+          <span class="bt-mac" id="btMac">—</span>
+        </div>
+        <div class="bt-icon-right" id="btIconRight">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M6 7L17 17M17 7L12 12L17 17M12 3V21M6 9L12 3L12 12L6 17"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Buttons row -->
+      <div class="bt-btn-row">
+        <button class="btn btn-primary" id="btnConnect" onclick="connectBluetooth()">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <path d="M13 3L4 14h7l-1 7 9-11h-7l1-10z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+          Conectar HC-06
+        </button>
+        <button class="btn btn-outline" id="btnScan" onclick="scanDevices()">
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+            <path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Buscar
+        </button>
+      </div>
+
+      <!-- Scan results -->
+      <div class="scan-results" id="scanResults" style="display:none">
+        <div class="scan-label">Dispositivos encontrados</div>
+        <ul class="device-list" id="deviceList"></ul>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN 2: Sensor ── -->
+    <section class="section">
+      <div class="section-title">
+        <span class="section-icon">📡</span>
+        Sensor Ultrasónico HC-SR04
+      </div>
+
+      <div class="sensor-row">
+        <!-- Gauge -->
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 180 110">
+            <defs>
+              <linearGradient id="gGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%"   stop-color="#00ff88"/>
+                <stop offset="50%"  stop-color="#00d4ff"/>
+                <stop offset="100%" stop-color="#ff4455"/>
+              </linearGradient>
+            </defs>
+            <!-- Base arc -->
+            <path d="M18 105 A72 72 0 0 1 162 105"
+                  stroke="#0d2035" stroke-width="14" fill="none" stroke-linecap="round"/>
+            <!-- Progress arc -->
+            <path id="gaugeArc" d="M18 105 A72 72 0 0 1 162 105"
+                  stroke="url(#gGrad)" stroke-width="14" fill="none" stroke-linecap="round"
+                  stroke-dasharray="226" stroke-dashoffset="226"/>
+            <!-- Labels -->
+            <text x="12"  y="120" fill="#3a5570" font-size="9" text-anchor="middle" font-family="Rajdhani">0</text>
+            <text x="90"  y="18"  fill="#3a5570" font-size="9" text-anchor="middle" font-family="Rajdhani">200</text>
+            <text x="168" y="120" fill="#3a5570" font-size="9" text-anchor="middle" font-family="Rajdhani">400</text>
+            <!-- Value -->
+            <text id="gaugeNum" x="90" y="85" fill="#00d4ff" font-size="32"
+                  font-weight="700" text-anchor="middle" font-family="Orbitron">0</text>
+            <text x="90" y="100" fill="#3a7a9a" font-size="11"
+                  text-anchor="middle" font-family="Rajdhani">cm</text>
+          </svg>
+        </div>
+
+        <!-- Stats -->
+        <div class="sensor-stats">
+          <div class="stat-box">
+            <span class="stat-lbl">Distancia</span>
+            <span class="stat-val cyan" id="distVal">0 cm</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-lbl">Estado</span>
+            <span class="stat-val green" id="obstState">✓ Libre</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-lbl">Umbral</span>
+            <span class="stat-val">30 cm</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proximity bar -->
+      <div class="prox-row">
+        <span class="prox-lbl">Lejos</span>
+        <div class="prox-bar"><div class="prox-fill" id="proxFill"></div></div>
+        <span class="prox-lbl">Cerca</span>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN 3: Modo ── -->
+    <section class="section">
+      <div class="mode-toggle" id="modeToggle">
+        <div class="mode-track" id="modeTrack"></div>
+        <button class="mode-opt active" id="btnManual" onclick="setMode('manual')">
+          🕹️ MANUAL
+        </button>
+        <button class="mode-opt" id="btnAuto" onclick="setMode('auto')">
+          🤖 AUTOMÁTICO
+        </button>
+      </div>
+      <div class="mode-desc" id="modeDesc">
+        Control directo por joystick táctil. Comandos en tiempo real.
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN 4: D-Pad ── -->
+    <section class="section">
+      <div class="section-title"><span class="section-icon">🕹️</span> Control Direccional</div>
+
+      <!-- Direction label -->
+      <div class="dir-label" id="dirLabel">■ DETENIDO</div>
+
+      <!-- D-Pad grid -->
+      <div class="dpad-grid">
+        <!-- UP -->
+        <button class="dp-btn dp-up" id="dpUp"
+          ontouchstart="startMove('F',event)" ontouchend="stopMove(event)"
+          onmousedown="startMove('F',event)" onmouseup="stopMove(event)">
+          <svg viewBox="0 0 32 32" fill="currentColor" width="32" height="32">
+            <path d="M16 6L4 24h24L16 6z"/>
+          </svg>
+        </button>
+        <!-- LEFT -->
+        <button class="dp-btn dp-left" id="dpLeft"
+          ontouchstart="startMove('L',event)" ontouchend="stopMove(event)"
+          onmousedown="startMove('L',event)" onmouseup="stopMove(event)">
+          <svg viewBox="0 0 32 32" fill="currentColor" width="32" height="32">
+            <path d="M6 16L24 4v24L6 16z"/>
+          </svg>
+        </button>
+        <!-- STOP -->
+        <button class="dp-btn dp-stop" id="dpStop" onclick="sendCommand('S')">
+          <div class="stop-sq">■</div>
+        </button>
+        <!-- RIGHT -->
+        <button class="dp-btn dp-right" id="dpRight"
+          ontouchstart="startMove('R',event)" ontouchend="stopMove(event)"
+          onmousedown="startMove('R',event)" onmouseup="stopMove(event)">
+          <svg viewBox="0 0 32 32" fill="currentColor" width="32" height="32">
+            <path d="M26 16L8 4v24L26 16z"/>
+          </svg>
+        </button>
+        <!-- DOWN -->
+        <button class="dp-btn dp-down" id="dpDown"
+          ontouchstart="startMove('B',event)" ontouchend="stopMove(event)"
+          onmousedown="startMove('B',event)" onmouseup="stopMove(event)">
+          <svg viewBox="0 0 32 32" fill="currentColor" width="32" height="32">
+            <path d="M16 26L4 8h24L16 26z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Speed -->
+      <div class="speed-wrap">
+        <div class="speed-header">
+          <span class="speed-lbl">Velocidad</span>
+          <span class="speed-val cyan" id="speedNum">150</span>
+          <span class="speed-lbl">/ 255</span>
+        </div>
+        <input type="range" class="speed-slider" id="speedSlider"
+               min="0" max="255" value="150"
+               oninput="updateSpeed(this.value)">
+        <div class="speed-marks">
+          <span>Lento</span><span>Medio</span><span>Rápido</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN 5: Telemetría ── -->
+    <section class="section">
+      <div class="section-title"><span class="section-icon">📊</span> Telemetría</div>
+      <div class="tele-row">
+        <div class="tele-box">
+          <div class="tele-val" id="teleCmds">0</div>
+          <div class="tele-lbl">Comandos</div>
+        </div>
+        <div class="tele-box">
+          <div class="tele-val" id="teleTime">00:00</div>
+          <div class="tele-lbl">Tiempo</div>
+        </div>
+        <div class="tele-box">
+          <div class="tele-val" id="teleObst">0</div>
+          <div class="tele-lbl">Obstáculos</div>
+        </div>
+        <div class="tele-box">
+          <div class="tele-val" id="teleMode">—</div>
+          <div class="tele-lbl">Modo</div>
+        </div>
+      </div>
+      <!-- Mini chart -->
+      <div class="chart-wrap">
+        <div class="chart-lbl">Historial de distancia</div>
+        <canvas id="distChart" width="340" height="56"></canvas>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN 6: Comandos rápidos ── -->
+    <section class="section">
+      <div class="section-title"><span class="section-icon">⚡</span> Comandos Rápidos</div>
+      <div class="qcmd-grid">
+        <button class="qcmd-btn" onclick="sendCommand('F')">▲ Avanzar</button>
+        <button class="qcmd-btn" onclick="sendCommand('B')">▼ Retroceder</button>
+        <button class="qcmd-btn" onclick="sendCommand('L')">◀ Izquierda</button>
+        <button class="qcmd-btn" onclick="sendCommand('R')">▶ Derecha</button>
+        <button class="qcmd-btn qcmd-stop" onclick="sendCommand('S')">■ DETENER</button>
+        <button class="qcmd-btn qcmd-auto" onclick="setMode('auto')">🤖 Auto</button>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN 7: Log ── -->
+    <section class="section">
+      <div class="section-title-row">
+        <span class="section-title" style="margin-bottom:0"><span class="section-icon">📡</span> Log</span>
+        <button class="btn-clear" onclick="clearLog()">Limpiar</button>
+      </div>
+      <div class="log-wrap" id="logWrap">
+        <div class="log-line log-info">Sistema listo...</div>
+        <div class="log-line log-info">Esperando conexión BT...</div>
+      </div>
+    </section>
+
+    <!-- ── SECCIÓN 8: Código Arduino ── -->
+    <section class="section">
+      <div class="section-title-row">
+        <span class="section-title" style="margin-bottom:0"><span class="section-icon">💻</span> Código Arduino</span>
+        <button class="btn-clear" onclick="copyCode()">⧉ Copiar</button>
+      </div>
+      <div class="code-wrap">
+        <pre class="code-pre" id="codeBlock">
+<span class="c-cmt">// Arduino Mega + HC-06 + HC-SR04</span>
+<span class="c-kw">#include</span> &lt;SoftwareSerial.h&gt;
+SoftwareSerial <span class="c-fn">bt</span>(<span class="c-num">10</span>, <span class="c-num">11</span>);
+<span class="c-kw">const int</span> TRIG=<span class="c-num">7</span>, ECHO=<span class="c-num">8</span>;
+<span class="c-kw">const int</span> ENA=<span class="c-num">3</span>,IN1=<span class="c-num">4</span>,IN2=<span class="c-num">5</span>;
+<span class="c-kw">const int</span> ENB=<span class="c-num">6</span>,IN3=<span class="c-num">22</span>,IN4=<span class="c-num">23</span>;
+<span class="c-kw">int</span> spd=<span class="c-num">150</span>; <span class="c-kw">char</span> mode=<span class="c-str">'M'</span>;
+
+<span class="c-kw">long</span> <span class="c-fn">getDist</span>(){
+  digitalWrite(TRIG,LOW); delayMicroseconds(<span class="c-num">2</span>);
+  digitalWrite(TRIG,HIGH); delayMicroseconds(<span class="c-num">10</span>);
+  digitalWrite(TRIG,LOW);
+  <span class="c-kw">return</span> pulseIn(ECHO,HIGH)*<span class="c-num">0.034</span>/<span class="c-num">2</span>;
+}
+<span class="c-kw">void</span> <span class="c-fn">loop</span>(){
+  <span class="c-kw">long</span> d=<span class="c-fn">getDist</span>();
+  bt.print(<span class="c-str">"D:"</span>); bt.println(d);
+  <span class="c-kw">if</span>(bt.available()){
+    <span class="c-kw">char</span> c=bt.read();
+    <span class="c-kw">if</span>(c==<span class="c-str">'A'</span>)mode=<span class="c-str">'A'</span>;
+    <span class="c-kw">else if</span>(c==<span class="c-str">'M'</span>)mode=<span class="c-str">'M'</span>;
+    <span class="c-kw">else if</span>(mode==<span class="c-str">'M'</span>)<span class="c-fn">exec</span>(c);
+  }
+  <span class="c-kw">if</span>(mode==<span class="c-str">'A'</span>)<span class="c-fn">autoNav</span>(d);
+  delay(<span class="c-num">100</span>);
+}
+        </pre>
+      </div>
+    </section>
+
+    <div class="bottom-safe"></div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registrado', reg))
+          .catch(err => console.error('Error registrando Service Worker', err));
+      });
+    }
+  </script>
+</body>
+</html>
