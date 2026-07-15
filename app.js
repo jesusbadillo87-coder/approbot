@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('keyup', onKeyUp);
 
-  log('Sistema listo (VERSIÓN 5.0).', 'info');
+  log('Sistema listo (VERSIÓN 6.0).', 'info');
   log('Usar Chrome/Edge para Web Bluetooth.', 'info');
   updateTele();
 });
@@ -130,15 +130,16 @@ async function sendCommand(cmd) {
   }
   try {
     const data = new TextEncoder().encode(cmd);
-    // Muchos módulos BLE (como HM-10) requieren escribir sin esperar respuesta
-    if (S.charRx.properties.writeWithoutResponse) {
+    try {
+      // Intentamos escribir sin respuesta primero (es lo que exigen los clones HM-10)
       await S.charRx.writeValueWithoutResponse(data);
-    } else {
+    } catch (e1) {
+      // Si falla, intentamos escribir con respuesta obligatoria
       await S.charRx.writeValue(data);
     }
     log(`→ ${cmdLabel(cmd)}`, 'cmd');
   } catch (e) { 
-    log(`Error: ${e.message}`, 'error'); 
+    log(`Error Escritura: ${e.message}`, 'error'); 
   }
 }
 
