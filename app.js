@@ -129,9 +129,17 @@ async function sendCommand(cmd) {
     return;
   }
   try {
-    await S.charRx.writeValue(new TextEncoder().encode(cmd));
+    const data = new TextEncoder().encode(cmd);
+    // Muchos módulos BLE (como HM-10) requieren escribir sin esperar respuesta
+    if (S.charRx.properties.writeWithoutResponse) {
+      await S.charRx.writeValueWithoutResponse(data);
+    } else {
+      await S.charRx.writeValue(data);
+    }
     log(`→ ${cmdLabel(cmd)}`, 'cmd');
-  } catch (e) { log(`Error: ${e.message}`, 'error'); }
+  } catch (e) { 
+    log(`Error: ${e.message}`, 'error'); 
+  }
 }
 
 const cmdLabel = c => ({ F:'AVANZAR', B:'RETROCEDER', L:'IZQUIERDA', R:'DERECHA', S:'DETENER', A:'MODO AUTO', M:'MODO MANUAL' }[c] || c);
