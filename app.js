@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('keyup', onKeyUp);
 
-  log('Sistema listo.', 'info');
+  log('Sistema listo (VERSIÓN 5.0).', 'info');
   log('Usar Chrome/Edge para Web Bluetooth.', 'info');
   updateTele();
 });
