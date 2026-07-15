@@ -30,6 +30,13 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then((response) => response || fetch(e.request))
+    fetch(e.request)
+      .then((response) => {
+        // Clonamos la respuesta y la guardamos en cache
+        const resClone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, resClone));
+        return response;
+      })
+      .catch(() => caches.match(e.request)) // Si no hay internet, devolvemos el cache
   );
 });
